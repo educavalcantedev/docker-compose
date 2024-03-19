@@ -8,6 +8,8 @@ services:
       resources:
         limits:
           memory: 500m
+    networks:
+      - eazybank
   cards:
     image: "educavalcantedev/cards:s4"
     container_name: cards-ms
@@ -17,6 +19,8 @@ services:
       resources:
         limits:
           memory: 500m
+    networks:
+      - eazybank
   loans:
     image: "educavalcantedev/loans:s4"
     container_name: loans-ms
@@ -26,4 +30,8 @@ services:
       resources:
         limits:
           memory: 500m
-
+    networks:
+      - eazybank
+networks:
+  eazybank:
+    driver: "bridge"
