@@ -1,4 +1,26 @@
 services:
+
+  kafka:
+    image: docker.io/bitnami/kafka:3.7
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      # KRaft settings
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      # Listeners
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
   rabbit:
     image: rabbitmq:3.13-management
     hostname: rabbitmq
@@ -286,7 +308,7 @@ services:
       service: network-deploy-service
 
   configserver:
-    image: "educavalcantedev/configserver:s13"
+    image: "educavalcantedev/configserver:s14"
     container_name: configserver-ms
     ports:
       - "8071:8071"
@@ -306,7 +328,7 @@ services:
       OTEL_SERVICE_NAME: "configserver"
 
   eurekaserver:
-    image: "educavalcantedev/eurekaserver:s13"
+    image: "educavalcantedev/eurekaserver:s14"
     container_name: eurekaserver-ms
     ports:
       - "8070:8070"
@@ -324,7 +346,7 @@ services:
       OTEL_SERVICE_NAME: "eurekaserver"
 
   gatewayserver:
-    image: "educavalcantedev/gatewayserver:s13"
+    image: "educavalcantedev/gatewayserver:s14"
     container_name: gatewayserver-ms
     ports:
       - "8072:8072"
@@ -350,7 +372,7 @@ services:
       service: microservice-eureka-config
 
   accounts:
-    image: "educavalcantedev/accounts:s13"
+    image: "educavalcantedev/accounts:s14"
     container_name: accounts-ms
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health/readiness | grep UP || exit 1"
@@ -367,13 +389,14 @@ services:
       SPRING_APPLICATION_NAME: "accounts"
       SPRING_DATASOURCE_URL: "jdbc:postgresql://accountsdb:5432/accountsdb"
       OTEL_SERVICE_NAME: "accounts"
-      SPRING_RABBITMQ_HOST: "rabbit"
+      ##SPRING_RABBITMQ_HOST: "rabbit"
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: "kafka:9092"
     extends:
       file: common-config.yml
       service: microservice-eureka-config
 
   cards:
-    image: "educavalcantedev/cards:s13"
+    image: "educavalcantedev/cards:s14"
     container_name: cards-ms
     healthcheck:
       test: "curl --fail --silent localhost:9000/actuator/health/readiness | grep UP || exit 1"
@@ -395,7 +418,7 @@ services:
       service: microservice-eureka-config
 
   loans:
-    image: "educavalcantedev/loans:s13"
+    image: "educavalcantedev/loans:s14"
     container_name: loans-ms
     healthcheck:
       test: "curl --fail --silent localhost:8090/actuator/health/readiness | grep UP || exit 1"
@@ -417,16 +440,21 @@ services:
       service: microservice-eureka-config
 
   message:
-    image: "educavalcantedev/message:s13"
+    image: "educavalcantedev/message:s14"
     container_name: message-ms
     depends_on:
       rabbit:
         condition: service_healthy
     environment:
-      SPRING_RABBITMQ_HOST: "rabbit"
+      ##SPRING_RABBITMQ_HOST: "rabbit"
+      SPRING_CLOUD_STREAM_KAFKA_BINDER_BROKERS: "kafka:9092"
     extends:
       file: common-config.yml
       service: network-deploy-service
+
+volumes:
+  kafka_data:
+    driver: local
 
 networks:
   eazybank:
